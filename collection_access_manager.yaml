@@ -1,0 +1,9 @@
+name: collection_access_manager
+version: 1.04
+title: Collection Access Manager
+desc: Which user groups can see which featured collections - tick access per group in one table (tree, filters, copy between groups, version history)
+author: Jacek Kowalczyk
+config_url: /plugins/collection_access_manager/pages/setup.php
+default_priority: 999
+icon: folder-open
+category: System
