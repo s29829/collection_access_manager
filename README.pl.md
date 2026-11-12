@@ -2,7 +2,7 @@
 
 [English](README.md) | **Polski**
 
-Dokumentacja dla wersji wtyczki **1.04** (ResourceSpace 11).
+Dokumentacja dla wersji wtyczki **1.06** (ResourceSpace 11).
 Znacznik *(od X.YY)* oznacza wersję wtyczki, od której funkcja jest dostępna. Funkcje bez
 znacznika są dostępne od wersji 1.00. Historia zmian: [CHANGELOG.md](CHANGELOG.md).
 
@@ -62,6 +62,40 @@ zostają.
 - **Grupy dziedziczące uprawnienia** po grupie nadrzędnej są tylko do odczytu (wyszarzone) i
   pokazują stan grupy nadrzędnej.
 - **Select > All / None** zaznacza lub odznacza wiersz we wszystkich pokazanych grupach.
+
+## Widok drzewa *(od 1.05)*
+
+**View: Table / Tree** nad filtrami przełącza między tabelą a widokiem drzewa (wybór jest
+zapamiętywany w przeglądarce). Widok drzewa też jest tabelą: pierwsza kolumna pokazuje Featured
+collections jako **drzewo folderów** – linie poziomów, ikona folderu dla pozycji z podfolderami,
+ikona kolekcji dla pozycji z zasobami, **▸** rozwija lub zwija folder – a kolejne kolumny to
+**grupy użytkowników z polami wyboru** *(od 1.06; w 1.05 drzewo pokazywało zaznaczenia jednej
+wybranej grupy)*, do tego **All / None** dla widocznych grup i dwa wiersze ogólne (`j*`, `J`).
+Zaznaczenia są te same co w tabeli i działają według tych samych zasad (zaznaczenie zaznacza też
+nadrzędne, odznaczenie ukrywa wszystko poniżej). Filtry nad tabelą działają w obu widokach: grupy
+(wyszukiwanie, grupa nadrzędna, liczba kolumn, strony) i wiersze (wyszukiwanie, differing,
+unsaved); **open all / close all** działa w widoku, który jest pokazany. Grupy dziedziczące
+uprawnienia są tylko do odczytu. **Save changes** zapisuje zmiany z obu widoków.
+
+## Foldery: tworzenie, zmiana nazwy, usuwanie *(od 1.05)*
+
+W obu widokach każda pozycja ma trzy małe przyciski (wyraźniejsze po najechaniu kursorem):
+
+- **+** – nowy folder **wewnątrz** tej pozycji (podfolder). **+ New top-level folder** nad tabelą
+  tworzy folder na najwyższym poziomie. Jeśli pozycja zawiera zasoby, strona najpierw pyta: z
+  podfolderem ResourceSpace pokazuje ją jako kategorię.
+- **ołówek** – zmiana nazwy. Podpowiadana jest zapisana nazwa (także z tłumaczeniami, np.
+  `~en:Name~pl:Nazwa`, które możesz zostawić).
+- **kosz** – usunięcie. Usunąć można tylko **pustą** pozycję (bez podfolderów i bez zasobów) –
+  tak samo jak `can_delete_featured_collection()` w ResourceSpace.
+
+Foldery to Featured collections tworzone funkcjami ResourceSpace (`create_collection()`,
+`save_collection()`, `delete_collection()`); ich właścicielem jest administrator, który je tworzy.
+Uprawnienia grup się nie zmieniają: nowy podfolder widzą grupy, które widzą folder nadrzędny; nowy
+folder najwyższego poziomu – tylko grupy z „All featured collections” (`j*`); innym grupom zaznacz
+go i zapisz. Niezapisane zaznaczenia przepadają przy zmianie folderu (strona pyta wcześniej).
+*Do sprawdzenia w ResourceSpace 11 (F12): tworzenie Featured collections używa tych samych wywołań
+co w 10.7.*
 
 ## Filtry
 
@@ -155,6 +189,8 @@ z kodami Featured collections każdej grupy. `<filestore>` to `$storagedir` Reso
 Potrzebuje tylko prawa zapisu do filestore, które ResourceSpace i tak wymaga.
 
 ## Reset wtyczki *(od 1.01)*
+
+Panel jest zwinięty – kliknij tytuł, aby go rozwinąć *(od 1.05)*; po nieudanym resecie otwiera się sam.
 
 Panel **Reset plugin** (po wpisaniu `RESET`) usuwa historię wersji z `<filestore>/collection_access_manager`.
 **Dostęp grup do Featured collections nie jest zmieniany** – bieżący stan staje się znowu wersją

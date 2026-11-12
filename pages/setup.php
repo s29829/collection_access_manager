@@ -11,6 +11,7 @@ if (!checkperm('a')) {
 $self        = $_SERVER['PHP_SELF'];
 $plugins_url = $baseurl_short . 'pages/team/team_plugins.php';
 $action      = (string) ($_POST['action'] ?? '');
+$reset_open  = false; // open the collapsible "Reset plugin" box after a failed reset
 $message     = '';
 $errors      = array();
 $relocated   = collection_access_manager_relocate();
@@ -47,11 +48,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action !== '') {
                 exit;
             }
         }
+    } elseif ($action === 'folder_create' || $action === 'folder_rename' || $action === 'folder_delete') {
+        // Folders = featured collections (since 1.05)
+        $ref  = (int) ($_POST['ref'] ?? 0);
+        $name = (string) ($_POST['name'] ?? '');
+        $err  = '';
+        if ($action === 'folder_create') {
+            $new = collection_access_manager_folder_create($name, $ref, $err);
+            if ($new > 0) {
+                redirect($self . '?done=folder_created&f=' . rawurlencode(collection_access_manager_folder_name($name)) . '&top=' . ($ref === 0 ? 1 : 0));
+                exit;
+            }
+        } elseif ($action === 'folder_rename') {
+            if (collection_access_manager_folder_rename($ref, $name, $err)) {
+                redirect($self . '?done=folder_renamed&f=' . rawurlencode(collection_access_manager_folder_name($name)));
+                exit;
+            }
+        } else {
+            $old = collection_access_manager_tree()[$ref]['name'] ?? ('#' . $ref);
+            if (collection_access_manager_folder_delete($ref, $err)) {
+                redirect($self . '?done=folder_deleted&f=' . rawurlencode($old));
+                exit;
+            }
+        }
+        $errors[] = $err !== '' ? $err : 'The folder could not be changed.';
     } elseif ($action === 'clear_history') {
         $n = collection_access_manager_clear_history();
         redirect($self . '?done=cleared&n=' . $n);
         exit;
     } elseif ($action === 'reset') {
+        $reset_open = true; // stays open when the reset fails (a successful reset redirects)
         if (trim((string) ($_POST['reset_confirm'] ?? '')) !== 'RESET') {
             $errors[] = 'Not reset: type RESET (capital letters) to confirm.';
         } elseif (!collection_access_manager_reset()) {
@@ -74,6 +100,16 @@ switch ((string) ($_GET['done'] ?? '')) {
         break;
     case 'cleared':
         $message = 'Version history cleared (' . $n . ' file(s) deleted, the newest version is kept).';
+        break;
+    case 'folder_created':
+        $message = 'Folder "' . (string) ($_GET['f'] ?? '') . '" created.'
+            . (!empty($_GET['top']) ? ' New top-level folders are visible only to groups with "All featured collections" - tick it for other groups and save.' : ' Groups that can see the parent folder can see it too.');
+        break;
+    case 'folder_renamed':
+        $message = 'Folder renamed to "' . (string) ($_GET['f'] ?? '') . '".';
+        break;
+    case 'folder_deleted':
+        $message = 'Folder "' . (string) ($_GET['f'] ?? '') . '" deleted.';
         break;
     case 'reset':
         $message = 'The plugin was reset: the version history was deleted. The featured collection access of the groups was not changed; the current state is version v1 again.';
@@ -111,6 +147,22 @@ $short    = function ($s, $max = 20) {
     return strlen($s) > $max ? substr($s, 0, $max - 1) . '…' : $s;
 };
 $nonce = isset($CSP_nonce) ? ' nonce="' . htmlspecialchars($CSP_nonce) . '"' : '';
+// Small inline SVG icons (no icon font needed)
+$svg = function ($path) {
+    return '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="' . $path . '"/></svg>';
+};
+$ico = array(
+    'add'    => $svg('M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z'),
+    'rename' => $svg('M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z'),
+    'delete' => $svg('M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z'),
+);
+$ops = function ($ref, $name) use ($ico, $h) {
+    return '<span class="fa-ops">'
+        . '<button type="button" class="fa-op" data-op="add" title="New folder inside &quot;' . $h($name) . '&quot;" aria-label="New folder inside">' . $ico['add'] . '</button>'
+        . '<button type="button" class="fa-op" data-op="rename" title="Rename" aria-label="Rename">' . $ico['rename'] . '</button>'
+        . '<button type="button" class="fa-op" data-op="delete" title="Delete (only empty folders)" aria-label="Delete">' . $ico['delete'] . '</button>'
+        . '</span>';
+};
 $tick  = function ($on, $inh) {
     return '<input type="checkbox"' . ($on ? ' checked' : '') . ($inh ? ' disabled' : '') . '>';
 };
@@ -192,10 +244,35 @@ include '../../../include/header.php';
         #fa-count.fa-has { font-weight: bold; color: #1e88e5; }
         .fa-box { margin: 14px 0; padding: 10px 14px; border: 1px solid rgba(128, 128, 128, 0.45); border-radius: 6px; }
         .fa-box h3 { margin: 0 0 8px; font-size: 1.05em; }
+        details.fa-box > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+        details.fa-box > summary::-webkit-details-marker { display: none; }
+        details.fa-box > summary::before { content: "\25B8"; display: inline-block; transition: transform 0.15s; }
+        details.fa-box[open] > summary::before { transform: rotate(90deg); }
+        details.fa-box > summary h3 { margin: 0; display: inline; }
+        details.fa-box[open] > summary { margin-bottom: 8px; }
         .fa-box p { margin: 0.5em 0; }
         .fa-row-ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0.6em 0; }
         <?php for ($d = 1; $d <= 15; $d++) { echo '.fa-d' . $d . ' { padding-left: ' . ($d * 18) . 'px; } '; } ?>
 
+        /* View switch (table / tree) and folder buttons - since 1.05 */
+        .fa-viewbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 0; }
+        .fa-page button.fa-outline, .fa-viewbar button { background: transparent; color: inherit; border: 1px solid rgba(128, 128, 128, 0.7); box-shadow: none; padding: 3px 10px; min-height: 0; margin: 0; }
+        .fa-viewbar button[aria-pressed=true] { background: var(--fa-acc); border-color: var(--fa-acc); color: #fff; }
+        .fa-viewbar .fa-newtop { margin-left: auto; }
+        .fa-name > .fa-nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .fa-ops { display: inline-flex; gap: 2px; flex: 0 0 auto; opacity: 0.35; transition: opacity 0.15s; }
+        .fa-row:hover .fa-ops, .fa-ops:focus-within { opacity: 1; }
+        .fa-op { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; margin: 0; min-width: 0; min-height: 0;
+                 background: transparent; color: inherit; border: 1px solid rgba(128, 128, 128, 0.6); border-radius: 3px; box-shadow: none; cursor: pointer; }
+        .fa-op svg { fill: currentColor; }
+        .fa-op:hover, .fa-op:focus { background: rgba(128, 128, 128, 0.2); }
+        .fa-op[data-op=delete]:hover { color: #c62828; border-color: #c62828; }
+        .fa-wrap[hidden], .fa-legend[hidden] { display: none; }
+        .fa-ttable { --fa-lw: 420px; }
+        .fa-tcell { display: flex; align-items: center; gap: 5px; min-width: 0; }
+        .fa-tguides { flex: 0 0 auto; align-self: stretch; margin: -4px 0; background-image: linear-gradient(to right, rgba(128, 128, 128, 0.5) 1px, transparent 1px);
+                      background-size: 18px 100%; background-position: 8px 0; background-repeat: repeat-x; }
+        .fa-ticon { flex: 0 0 auto; opacity: 0.8; display: inline-flex; }
         .fa-link { background: none; border: 0; padding: 0; margin: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; font-size: 0.85em; box-shadow: none; min-width: 0; }
     </style>
 
@@ -208,8 +285,16 @@ include '../../../include/header.php';
         The <b>Code</b> column shows the ResourceSpace permission: <code>j&lt;ref&gt;</code> for top-level entries, <code>-j&lt;ref&gt;</code> (hides) below them.
         The codes are written for you when you save; all other permissions of the groups stay as they are.</p>
 
+    <!-- View switch and new top-level folder (since 1.05) -->
+    <div class="fa-viewbar">
+        <span>View:</span>
+        <button type="button" class="fa-view" data-view="table" aria-pressed="true">Table</button>
+        <button type="button" class="fa-view" data-view="tree" aria-pressed="false">Tree</button>
+        <button type="button" class="fa-op-top fa-newtop" data-op="add" data-ref="0" title="New folder at the top level">+ New top-level folder</button>
+    </div>
+
     <!-- Filters -->
-    <div class="fa-filters">
+    <div class="fa-filters" id="fa-filters">
         <fieldset class="fa-fbox fa-fbox-fc">
             <legend>Featured collections <small>(table rows)</small><span class="fa-fstat" id="fa-qstat"></span></legend>
             <div class="fa-field">
@@ -259,7 +344,7 @@ include '../../../include/header.php';
     </div>
 
     <!-- Table: rows = featured collections, columns = user groups -->
-    <div class="fa-wrap">
+    <div class="fa-wrap" id="fa-wrap">
         <table class="fa-table" id="fa-table">
             <thead>
                 <tr class="fa-head">
@@ -298,12 +383,14 @@ include '../../../include/header.php';
                     $badge = $n['children'] ? count($n['children']) . ' inside' : $n['resources'] . ' resource' . ($n['resources'] === 1 ? '' : 's');
                     $code  = ($n['parent'] === 0 ? 'j' : '-j') . $ref; ?>
                     <tr class="fa-row fa-fc" data-kind="fc" data-ref="<?php echo (int) $ref; ?>" data-parent="<?php echo (int) $n['parent']; ?>"
-                        data-path="<?php echo $h(implode(',', $n['path'])); ?>" data-text="<?php echo $h($lower($n['name']) . ' ' . $ref); ?>">
+                        data-path="<?php echo $h(implode(',', $n['path'])); ?>" data-text="<?php echo $h($lower($n['name']) . ' ' . $ref); ?>"
+                        data-name="<?php echo $h($n['name']); ?>" data-raw="<?php echo $h($n['raw']); ?>" data-res="<?php echo (int) $n['resources']; ?>" data-kids="<?php echo count($n['children']); ?>">
                         <th class="fa-label" title="<?php echo $h($n['name'] . ' (' . $kind . ' #' . $ref . ')'); ?>">
                             <span class="fa-name fa-d<?php echo min(15, (int) $n['depth']); ?>">
                                 <?php if ($n['children']) { ?><button type="button" class="fa-tog" aria-label="Open or close"></button><?php } else { ?><span class="fa-sp"></span><?php } ?>
-                                <span><?php echo $h($n['name']); ?></span>
+                                <span class="fa-nm"><?php echo $h($n['name']); ?></span>
                                 <span class="fa-badge"><?php echo $h($badge); ?></span>
+                                <?php echo $ops($ref, $n['name']); ?>
                             </span>
                         </th>
                         <td class="fa-code"><code><?php echo $h($code); ?></code></td>
@@ -314,6 +401,21 @@ include '../../../include/header.php';
             </tbody>
         </table>
     </div>
+
+    <!-- Tree view (since 1.05): folder tree with a column of tick boxes per user group (built by the script) -->
+    <div class="fa-wrap" id="fa-treeview" hidden>
+        <table class="fa-table fa-ttable" id="fa-ttable"><thead></thead><tbody></tbody></table>
+    </div>
+    <p class="fa-legend" id="fa-tlegend" hidden>Tree view: the same ticks as in the table, with the folders shown as a tree (&#9656; opens or closes a folder).
+        Folder buttons: <b>+</b> new folder inside, pencil = rename, bin = delete (only empty folders). The filters above work in both views.</p>
+
+    <!-- Folder actions (filled by the buttons, since 1.05) -->
+    <form method="post" action="<?php echo $h($self); ?>" id="fa-folder-form" hidden>
+        <?php generateFormToken('collection_access_manager'); ?>
+        <input type="hidden" name="action" value="">
+        <input type="hidden" name="ref" value="0">
+        <input type="hidden" name="name" value="">
+    </form>
 
     <!-- Save -->
     <form method="post" action="<?php echo $h($self); ?>" id="fa-form" class="fa-save">
@@ -367,9 +469,9 @@ include '../../../include/header.php';
         <?php } ?>
     </div>
 
-    <!-- Reset -->
-    <div class="fa-box">
-        <h3>Reset plugin</h3>
+    <!-- Reset (collapsible) -->
+    <details class="fa-box"<?php echo $reset_open ? ' open' : ''; ?>>
+        <summary><h3>Reset plugin</h3></summary>
         <p>Deletes everything the plugin stored in <code><?php echo $h(collection_access_manager_base_dir()); ?></code> (the version history).
             <b>The featured collection access of the user groups is not changed.</b> This cannot be undone.</p>
         <form method="post" action="<?php echo $h($self); ?>" id="fa-reset">
@@ -379,7 +481,7 @@ include '../../../include/header.php';
                 <button type="submit" name="action" value="reset">Reset plugin</button>
             </div>
         </form>
-    </div>
+    </details>
 
     <script<?php echo $nonce; ?>>
     (function () {
@@ -424,7 +526,9 @@ include '../../../include/header.php';
             var boxes = cells.map(function (td) { return td.firstElementChild; });
             return { tr: tr, kind: tr.getAttribute('data-kind'), ref: tr.getAttribute('data-ref'), parent: tr.getAttribute('data-parent'),
                      path: (tr.getAttribute('data-path') || '').split(',').filter(Boolean), text: tr.getAttribute('data-text') || '',
-                     boxes: boxes, init: boxes.map(function (b) { return b.checked; }), children: [] };
+                     boxes: boxes, init: boxes.map(function (b) { return b.checked; }), children: [],
+                     name: tr.getAttribute('data-name') || '', raw: tr.getAttribute('data-raw') || '',
+                     res: parseInt(tr.getAttribute('data-res') || '0', 10), kids: parseInt(tr.getAttribute('data-kids') || '0', 10) };
         });
         var byRef = {};
         rows.forEach(function (r) { if (r.kind === 'fc') { byRef[r.ref] = r; } });
@@ -492,6 +596,7 @@ include '../../../include/header.php';
             gis.forEach(refreshOff);
             updateCount();
             if ($('fa-changed').checked || $('fa-diff').checked) { renderRows(); }
+            syncTree();
         }
 
         table.addEventListener('change', function (e) {
@@ -509,6 +614,9 @@ include '../../../include/header.php';
                 var tr = b.closest('tr'), r = rows.filter(function (x) { return x.tr === tr; })[0];
                 shown.forEach(function (gi) { setBox(r, gi, b.classList.contains('fa-all')); });
                 afterChange(shown);
+            } else if (b.closest('.fa-op')) {
+                var opRow = rows.filter(function (x) { return x.tr === b.closest('tr'); })[0];
+                folderOp(b.closest('.fa-op').getAttribute('data-op'), opRow);
             } else if (b.classList.contains('fa-tog')) {
                 var row = byRef[b.closest('tr').getAttribute('data-ref')];
                 row.tr.classList.toggle('fa-closed');
@@ -560,6 +668,7 @@ include '../../../include/header.php';
             groups.forEach(function (g) { g.th.classList.toggle('fa-hide', !vis[g.i]); });
             rows.forEach(function (r) { r.boxes.forEach(function (b, gi) { b.parentNode.classList.toggle('fa-hide', !vis[gi]); }); });
             allTrs.forEach(function (tr) { var td = tr.querySelector('td[colspan]'); if (td) { td.colSpan = shown.length + 3; } });
+            renderTreeColumns(vis);
             $('fa-gstat').textContent = '(' + list.length + ' of ' + groups.length + ')';
             $('fa-prev').disabled = pageNo === 0;
             $('fa-next').disabled = pageNo >= pages - 1;
@@ -569,31 +678,34 @@ include '../../../include/header.php';
         // ---- Rows: search, differing / unsaved, open / closed categories ----
         function renderRows() {
             var q = $('fa-q').value.trim().toLowerCase(), diff = $('fa-diff').checked, chg = $('fa-changed').checked;
-            var keep = {}, count = 0;
+            var keep = {}, count = 0, tcount = 0;
             if (q) {
                 fcRows.forEach(function (r) {
                     if (r.text.indexOf(q) !== -1) { keep[r.ref] = true; r.path.forEach(function (p) { keep[p] = true; }); }
                 });
             }
             rows.forEach(function (r) {
-                var show = true;
-                if (r.kind === 'fc') {
-                    if (q && !keep[r.ref]) { show = false; }
-                    // closed category: hide its children (not while searching)
-                    if (show && !q && r.path.some(function (p) { return byRef[p] && byRef[p].tr.classList.contains('fa-closed'); })) { show = false; }
-                }
-                if (show && diff) {
+                var match = true;
+                if (r.kind === 'fc' && q && !keep[r.ref]) { match = false; }
+                if (match && diff) {
                     var seen = {};
                     shown.forEach(function (gi) { seen[r.boxes[gi].checked ? 1 : 0] = true; });
-                    show = seen[0] && seen[1];
+                    match = seen[0] && seen[1];
                 }
-                if (show && chg) {
-                    show = shown.some(function (gi) { return r.boxes[gi].checked !== r.init[gi]; });
+                if (match && chg) {
+                    match = shown.some(function (gi) { return r.boxes[gi].checked !== r.init[gi]; });
+                }
+                // closed folders hide their content (not while searching) - separately in each view
+                var show = match, tshow = match;
+                if (r.kind === 'fc' && !q) {
+                    if (r.path.some(function (p) { return byRef[p] && byRef[p].tr.classList.contains('fa-closed'); })) { show = false; }
+                    if (r.path.some(function (p) { return byRef[p] && byRef[p].tclosed; })) { tshow = false; }
                 }
                 r.tr.classList.toggle('fa-fold', !show);
-                if (show && r.kind === 'fc') { count++; }
+                if (r.ttr) { r.ttr.classList.toggle('fa-fold', !tshow); }
+                if (r.kind === 'fc') { count += show ? 1 : 0; tcount += tshow ? 1 : 0; }
             });
-            $('fa-qstat').textContent = '(' + count + ' of ' + fcRows.length + ' shown)';
+            $('fa-qstat').textContent = '(' + (currentView === 'tree' ? tcount : count) + ' of ' + fcRows.length + ' shown)';
         }
 
         ['fa-gq'].forEach(function (id) { $(id).addEventListener('input', function () { pageNo = 0; renderColumns(); }); });
@@ -606,8 +718,212 @@ include '../../../include/header.php';
         [$('fa-q'), $('fa-gq')].forEach(function (inp) {
             inp.addEventListener('keydown', function (e) { if (e.key === 'Escape') { inp.value = ''; inp.dispatchEvent(new Event('input')); } });
         });
-        $('fa-open-all').addEventListener('click', function () { fcRows.forEach(function (r) { r.tr.classList.remove('fa-closed'); }); renderRows(); });
-        $('fa-close-all').addEventListener('click', function () { fcRows.forEach(function (r) { if (r.children.length) { r.tr.classList.add('fa-closed'); } }); renderRows(); });
+        // open all / close all: in the view that is shown
+        function setClosed(r, closed) {
+            if (currentView === 'tree') {
+                r.tclosed = closed;
+                if (r.ttr) { r.ttr.classList.toggle('fa-closed', closed); }
+            } else {
+                r.tr.classList.toggle('fa-closed', closed);
+            }
+        }
+        $('fa-open-all').addEventListener('click', function () { fcRows.forEach(function (r) { setClosed(r, false); }); renderRows(); });
+        $('fa-close-all').addEventListener('click', function () { fcRows.forEach(function (r) { if (r.children.length) { setClosed(r, true); } }); renderRows(); });
+
+        // ---- Folders: create / rename / delete (since 1.05) ----
+        var folderForm = $('fa-folder-form');
+        function folderSubmit(action, ref, name) {
+            if (changedGroups().length && !confirm('The table has unsaved changes - they are lost when the folder is changed. Continue?')) { return; }
+            folderForm.elements.action.value = action;
+            folderForm.elements.ref.value = ref;
+            folderForm.elements.name.value = name;
+            leaving = true;
+            folderForm.submit();
+        }
+        function askName(text, def) {
+            var v = window.prompt(text, def || '');
+            if (v === null) { return null; }
+            v = v.trim();
+            if (!v) { return null; }
+            if (v.length > 100) { alert('The name can have at most 100 characters.'); return null; }
+            return v;
+        }
+        function folderOp(op, r) {
+            var name;
+            if (op === 'add') {
+                if (r && r.res > 0 && !confirm('"' + r.name + '" contains resources. With a sub-folder ResourceSpace shows it as a category. Continue?')) { return; }
+                name = askName(r ? 'Name of the new folder inside "' + r.name + '":' : 'Name of the new top-level folder:');
+                if (name !== null) { folderSubmit('folder_create', r ? r.ref : 0, name); }
+            } else if (op === 'rename' && r) {
+                name = askName('New name of "' + r.name + '":', r.raw || r.name);
+                if (name !== null && name !== r.raw) { folderSubmit('folder_rename', r.ref, name); }
+            } else if (op === 'delete' && r) {
+                if (r.kids > 0) { alert('"' + r.name + '" has sub-folders - delete them first.'); return; }
+                if (r.res > 0) { alert('"' + r.name + '" contains ' + r.res + ' resource(s) - remove them from the collection first.'); return; }
+                if (confirm('Delete the folder "' + r.name + '"? This cannot be undone.')) { folderSubmit('folder_delete', r.ref, ''); }
+            }
+        }
+        [].forEach.call(document.querySelectorAll('.fa-op-top'), function (b) {
+            b.addEventListener('click', function () { folderOp('add', null); });
+        });
+
+        // ---- Tree view (since 1.05): folder tree + one column of tick boxes per user group ----
+        // Its tick boxes mirror the boxes of the table (r.boxes = the model), so both views stay the same.
+        var currentView = 'table';
+        var treeView = $('fa-treeview'), ttable = $('fa-ttable'), treeTrs = [];
+        var FOLDER = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z"/></svg>';
+        var COLL = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M4 6H2v14a2 2 0 0 0 2 2h14v-2H4V6zm16-4H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg>';
+        var icons = {};
+        (function () {
+            var first = table.querySelector('.fa-ops');
+            if (first) { [].forEach.call(first.querySelectorAll('.fa-op'), function (b) { icons[b.getAttribute('data-op')] = b.innerHTML; }); }
+        })();
+        function el(tag, cls, text) {
+            var e = document.createElement(tag);
+            if (cls) { e.className = cls; }
+            if (text !== undefined) { e.textContent = text; }
+            return e;
+        }
+        function opButton(op, title) {
+            var b = el('button', 'fa-op');
+            b.type = 'button';
+            b.setAttribute('data-op', op);
+            b.title = title;
+            b.setAttribute('aria-label', title);
+            b.innerHTML = icons[op] || (op === 'add' ? '+' : op.charAt(0));
+            return b;
+        }
+        function sectionRow(text) {
+            var tr = el('tr', 'fa-sh'), td = el('td');
+            td.colSpan = groups.length + 2;
+            td.appendChild(el('span', '', text));
+            tr.appendChild(td);
+            treeTrs.push(tr);
+            return tr;
+        }
+        function treeRow(r, label) {
+            var tr = el('tr', 'fa-row');
+            var th = el('th', 'fa-label');
+            th.appendChild(label);
+            tr.appendChild(th);
+            r.tboxes = groups.map(function (g) {
+                var td = el('td', g.inh ? 'fa-inh' : '');
+                var cb = el('input');
+                cb.type = 'checkbox';
+                cb.disabled = g.inh;
+                td.appendChild(cb);
+                tr.appendChild(td);
+                return cb;
+            });
+            var act = el('td', 'fa-act');
+            var all = el('button', 'fa-all', 'All'), none = el('button', 'fa-none', 'None');
+            all.type = none.type = 'button';
+            act.appendChild(all);
+            act.appendChild(none);
+            tr.appendChild(act);
+            tr._row = r;
+            r.ttr = tr;
+            return tr;
+        }
+        function fcLabel(r) {
+            var cell = el('span', 'fa-tcell');
+            cell.title = r.name + ' (#' + r.ref + ')';
+            var guides = el('span', 'fa-tguides');
+            guides.style.width = (r.path.length * 18) + 'px';
+            cell.appendChild(guides);
+            if (r.children.length) {
+                var tog = el('button', 'fa-tog');
+                tog.type = 'button';
+                tog.setAttribute('aria-label', 'Open or close');
+                cell.appendChild(tog);
+            } else {
+                cell.appendChild(el('span', 'fa-sp'));
+            }
+            var icon = el('span', 'fa-ticon');
+            icon.innerHTML = r.children.length ? FOLDER : COLL;
+            cell.appendChild(icon);
+            cell.appendChild(el('span', 'fa-nm', r.name));
+            cell.appendChild(el('span', 'fa-badge', r.children.length ? r.children.length + ' inside' : r.res + ' resource' + (r.res === 1 ? '' : 's')));
+            var ops = el('span', 'fa-ops');
+            ops.appendChild(opButton('add', 'New folder inside "' + r.name + '"'));
+            ops.appendChild(opButton('rename', 'Rename'));
+            ops.appendChild(opButton('delete', 'Delete (only empty folders)'));
+            cell.appendChild(ops);
+            return cell;
+        }
+        (function buildTree() {
+            var thead = ttable.tHead, tbody = ttable.tBodies[0];
+            var htr = el('tr', 'fa-head');
+            htr.appendChild(el('th', 'fa-label', 'Folder'));
+            groups.forEach(function (g) { g.tth = g.th.cloneNode(true); htr.appendChild(g.tth); });
+            htr.appendChild(el('th', 'fa-act', 'Select'));
+            thead.appendChild(htr);
+            tbody.appendChild(sectionRow('General'));
+            [rowAll, rowSearch].forEach(function (r) {
+                tbody.appendChild(treeRow(r, el('span', '', r.tr.querySelector('th.fa-label').textContent)));
+            });
+            tbody.appendChild(sectionRow('Featured collections (' + fcRows.length + ')'));
+            if (!fcRows.length) { tbody.appendChild(sectionRow('No featured collections yet - create one with "+ New top-level folder".')); }
+            fcRows.forEach(function (r) { tbody.appendChild(treeRow(r, fcLabel(r))); }); // fcRows are in tree order
+        })();
+
+        function renderTreeColumns(vis) {
+            groups.forEach(function (g) { if (g.tth) { g.tth.classList.toggle('fa-hide', !vis[g.i]); } });
+            rows.forEach(function (r) {
+                if (r.tboxes) { r.tboxes.forEach(function (cb, gi) { cb.parentNode.classList.toggle('fa-hide', !vis[gi]); }); }
+            });
+            treeTrs.forEach(function (tr) { tr.firstChild.colSpan = shown.length + 2; });
+        }
+        function syncTree() {
+            rows.forEach(function (r) {
+                if (!r.tboxes) { return; }
+                var p = r.kind === 'fc' ? byRef[r.parent] : null;
+                r.tboxes.forEach(function (cb, gi) {
+                    cb.checked = r.boxes[gi].checked;
+                    cb.parentNode.classList.toggle('fa-chg', r.boxes[gi].checked !== r.init[gi]);
+                    cb.parentNode.classList.toggle('fa-off', !!p && !p.boxes[gi].checked);
+                });
+            });
+        }
+        ttable.addEventListener('change', function (e) {
+            var cb = e.target;
+            if (!cb || cb.type !== 'checkbox') { return; }
+            var r = cb.closest('tr')._row;
+            if (!r) { return; }
+            var gi = r.tboxes.indexOf(cb);
+            setBox(r, gi, cb.checked);
+            afterChange([gi]);
+        });
+        ttable.addEventListener('click', function (e) {
+            var b = e.target, tr = b.closest('tr'), r = tr && tr._row;
+            if (!r) { return; }
+            if (b.classList.contains('fa-all') || b.classList.contains('fa-none')) {
+                shown.forEach(function (gi) { setBox(r, gi, b.classList.contains('fa-all')); });
+                afterChange(shown);
+            } else if (b.closest('.fa-op')) {
+                folderOp(b.closest('.fa-op').getAttribute('data-op'), r);
+            } else if (b.classList.contains('fa-tog')) {
+                r.tclosed = !r.tclosed;
+                tr.classList.toggle('fa-closed', r.tclosed);
+                renderRows();
+            }
+        });
+
+        // ---- View switch: table / tree (remembered in this browser) ----
+        function setView(v) {
+            currentView = v === 'tree' ? 'tree' : 'table';
+            var tree = currentView === 'tree';
+            treeView.hidden = !tree;
+            $('fa-tlegend').hidden = !tree;
+            $('fa-wrap').hidden = tree;
+            [].forEach.call(document.querySelectorAll('.fa-view'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-view') === currentView ? 'true' : 'false'); });
+            try { window.localStorage.setItem('cam_view', currentView); } catch (e) { /* storage not available */ }
+            syncTree();
+            renderRows();
+        }
+        [].forEach.call(document.querySelectorAll('.fa-view'), function (b) {
+            b.addEventListener('click', function () { setView(b.getAttribute('data-view')); });
+        });
 
         // ---- Save / leave ----
         $('fa-form').addEventListener('submit', function () {
@@ -641,6 +957,9 @@ include '../../../include/header.php';
         groups.forEach(function (g) { refreshOff(g.i); });
         renderColumns();
         updateCount();
+        var savedView = 'table';
+        try { savedView = window.localStorage.getItem('cam_view') || 'table'; } catch (e) { /* storage not available */ }
+        setView(savedView === 'tree' ? 'tree' : 'table');
     })();
     </script>
     <?php } ?>

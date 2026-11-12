@@ -62,6 +62,7 @@ function collection_access_manager_tree()
         $all[$ref] = array(
             'ref'       => $ref,
             'name'      => collection_access_manager_tr($r['name'] ?? ('#' . $ref)),
+            'raw'       => (string) ($r['name'] ?? ''), // stored name (may hold translations "~en:...~pl:...")
             'parent'    => (int) ($r['parent'] ?? 0),
             'resources' => (int) ($r['resources'] ?? 0),
             'children'  => array(),
@@ -102,6 +103,124 @@ function collection_access_manager_tree()
     };
     $walk(0, 0, array());
     return $out;
+}
+
+// ---------------------------------------------------------------------------
+// Folders: create, rename, delete featured collections (since 1.05). Uses the same functions
+// as ResourceSpace's own pages (pages/collection_manage.php "call to action" tile and
+// collection_edit.php): create_collection() + save_collection() with "featured_collections_changes",
+// delete_collection(). Group permissions are not changed.
+// ---------------------------------------------------------------------------
+
+// Cleans a folder name: trimmed, no control characters, 1-100 characters ('' = invalid)
+function collection_access_manager_folder_name($name)
+{
+    $name = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string) $name) ?? '');
+    $len  = function_exists('mb_strlen') ? mb_strlen($name) : strlen($name);
+    return ($len >= 1 && $len <= 100) ? $name : '';
+}
+
+// Creates a featured collection (folder) below $parent (0 = top level). Returns its ref or 0.
+function collection_access_manager_folder_create($name, $parent, &$error)
+{
+    $error  = '';
+    $name   = collection_access_manager_folder_name($name);
+    $parent = (int) $parent;
+    $type   = defined('COLLECTION_TYPE_FEATURED') ? COLLECTION_TYPE_FEATURED : 3;
+    if ($name === '') {
+        $error = 'Enter a folder name (1-100 characters).';
+        return 0;
+    }
+    if ($parent !== 0 && !isset(collection_access_manager_tree()[$parent])) {
+        $error = 'The parent folder does not exist any more.';
+        return 0;
+    }
+    if (!function_exists('create_collection') || !function_exists('save_collection')) {
+        $error = 'This ResourceSpace version does not provide create_collection() / save_collection().';
+        return 0;
+    }
+    $new = (int) create_collection((int) ($GLOBALS['userref'] ?? 0), $name);
+    if ($new <= 0) {
+        $error = 'The folder could not be created.';
+        return 0;
+    }
+    $changes = array('update_parent' => $parent, 'force_featured_collection_type' => true);
+    $bg      = $GLOBALS['FEATURED_COLLECTION_BG_IMG_SELECTION_OPTIONS']['most_popular_images'] ?? null;
+    if ($bg !== null) {
+        $changes['thumbnail_selection_method'] = $bg;
+    }
+    save_collection($new, array('name' => $name, 'featured_collections_changes' => $changes));
+    // Check the result; fall back to setting type and parent directly
+    $row = ps_query('SELECT type, parent FROM collection WHERE ref = ?', array('i', $new));
+    $row = $row[0] ?? null;
+    if (!$row || (int) $row['type'] !== $type || (int) ($row['parent'] ?? 0) !== $parent) {
+        if ($parent === 0) {
+            ps_query('UPDATE collection SET type = ?, parent = NULL WHERE ref = ?', array('i', $type, 'i', $new));
+        } else {
+            ps_query('UPDATE collection SET type = ?, parent = ? WHERE ref = ?', array('i', $type, 'i', $parent, 'i', $new));
+        }
+        if (function_exists('clear_query_cache')) {
+            clear_query_cache('featured_collections');
+        }
+    }
+    return $new;
+}
+
+// Renames a featured collection
+function collection_access_manager_folder_rename($ref, $name, &$error)
+{
+    $error = '';
+    $ref   = (int) $ref;
+    $name  = collection_access_manager_folder_name($name);
+    if ($name === '') {
+        $error = 'Enter a folder name (1-100 characters).';
+        return false;
+    }
+    if (!isset(collection_access_manager_tree()[$ref])) {
+        $error = 'The folder does not exist any more.';
+        return false;
+    }
+    if (function_exists('save_collection')) {
+        save_collection($ref, array('name' => $name));
+    }
+    if ((string) ps_value('SELECT name value FROM collection WHERE ref = ?', array('i', $ref), '') !== $name) {
+        ps_query('UPDATE collection SET name = ? WHERE ref = ?', array('s', $name, 'i', $ref));
+        if (function_exists('clear_query_cache')) {
+            clear_query_cache('featured_collections');
+        }
+    }
+    return (string) ps_value('SELECT name value FROM collection WHERE ref = ?', array('i', $ref), '') === $name;
+}
+
+// Deletes an EMPTY featured collection (no sub-folders, no resources) - like ResourceSpace's
+// can_delete_featured_collection(). Codes j<ref> / -j<ref> left in groups are ignored by ResourceSpace.
+function collection_access_manager_folder_delete($ref, &$error)
+{
+    $error = '';
+    $ref   = (int) $ref;
+    $tree  = collection_access_manager_tree();
+    if (!isset($tree[$ref])) {
+        $error = 'The folder does not exist any more.';
+        return false;
+    }
+    if ($tree[$ref]['children']) {
+        $error = '"' . $tree[$ref]['name'] . '" has sub-folders - delete or move them first.';
+        return false;
+    }
+    if ($tree[$ref]['resources'] > 0) {
+        $error = '"' . $tree[$ref]['name'] . '" contains ' . $tree[$ref]['resources'] . ' resource(s) - remove them from the collection first.';
+        return false;
+    }
+    if (!function_exists('delete_collection')) {
+        $error = 'This ResourceSpace version does not provide delete_collection().';
+        return false;
+    }
+    delete_collection($ref);
+    if ((int) ps_value('SELECT COUNT(*) value FROM collection WHERE ref = ?', array('i', $ref), 0) > 0) {
+        $error = 'ResourceSpace did not delete "' . $tree[$ref]['name'] . '".';
+        return false;
+    }
+    return true;
 }
 
 // ---------------------------------------------------------------------------

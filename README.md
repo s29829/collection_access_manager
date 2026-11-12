@@ -2,7 +2,7 @@
 
 **English** | [Polski](README.pl.md)
 
-Documentation for plugin version **1.04** (ResourceSpace 11).
+Documentation for plugin version **1.06** (ResourceSpace 11).
 *(since X.YY)* marks the plugin version in which a feature first appeared. Features without
 a mark have been available since 1.00. Change history (in Polish): [CHANGELOG.md](CHANGELOG.md).
 
@@ -65,6 +65,40 @@ longer exist are kept too.
 - **Groups that inherit permissions** from their parent group are read-only (greyed) and show
   the parent group's state.
 - **Select > All / None** ticks or unticks the row for all shown groups.
+
+## Tree view *(since 1.05)*
+
+**View: Table / Tree** above the filters switches between the table and the tree view (the choice
+is remembered in the browser). The tree view is a table too: the first column shows the featured
+collections as a **tree of folders** – lines for the levels, a folder icon for entries with
+sub-folders and a collection icon for entries with resources, **▸** opens or closes a folder – and
+the other columns are the **user groups with tick boxes** *(since 1.06; in 1.05 the tree showed the
+ticks of one selected group)*, plus **All / None** for the shown groups and the two general rows
+(`j*`, `J`). The ticks are the same as in the table and follow the same rules (ticking also ticks
+the parents, unticking hides everything below). The filters above work in both views: groups
+(search, parent group, columns, pages) and rows (search, differing, unsaved); **open all / close
+all** acts on the view that is shown. Groups that inherit permissions are read-only. **Save changes**
+saves the changes of both views.
+
+## Folders: create, rename, delete *(since 1.05)*
+
+In both views every entry has three small buttons (shown more clearly on hover):
+
+- **+** – new folder **inside** this entry (sub-folder). **+ New top-level folder** above the
+  table creates a folder at the top level. If the entry contains resources, the page asks first:
+  with a sub-folder ResourceSpace shows it as a category.
+- **pencil** – rename. The current stored name is suggested (also with translations such as
+  `~en:Name~pl:Nazwa`, which you can keep).
+- **bin** – delete. Only **empty** entries can be deleted (no sub-folders and no resources) – the
+  same rule as ResourceSpace's `can_delete_featured_collection()`.
+
+The folders are featured collections created with ResourceSpace's own functions
+(`create_collection()`, `save_collection()`, `delete_collection()`), owned by the administrator who
+creates them. The permissions of the groups are not changed: a new sub-folder is visible to the
+groups that can see its parent; a new top-level folder only to groups with "All featured
+collections" (`j*`) – tick it for other groups and save. Unsaved ticks are lost when a folder is
+changed (the page asks first). *To check in ResourceSpace 11 (F12): creating featured collections
+uses the same calls as in 10.7.*
 
 ## Filters
 
@@ -157,6 +191,8 @@ version 1.00 in `<filestore>/fcaccess_versions_<key>/` – version 1.04 copies i
 It only needs write access to the filestore, which ResourceSpace requires anyway.
 
 ## Reset plugin *(since 1.01)*
+
+The box is collapsed – click its title to open it *(since 1.05)*; it opens by itself after a failed reset.
 
 The **Reset plugin** box (after typing `RESET`) deletes the version history in
 `<filestore>/collection_access_manager`. **The featured collection access of the groups is not changed** – the

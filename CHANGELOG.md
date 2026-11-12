@@ -3,6 +3,12 @@
 Numeracja wtyczki: 1.00, 1.01, 1.02 … (+0.01 przy każdej zmianie, `tools/release.py bump`).
 Wersja wtyczki w `collection_access_manager.yaml`; wersja całego repozytorium w pliku `VERSION` (zob. `CHANGELOG.md` w katalogu głównym).
 
+## [1.06] - 2026-11-12
+- Widok drzewa: obok drzewa folderów kolumny grup użytkowników z polami wyboru (All / None, wiersze j* i J), filtry grup i wierszy działają w obu widokach; usunięty wybór jednej grupy.
+
+## [1.05] - 2026-11-12
+- Widok drzewa (przełącznik Table / Tree) ze strukturą folderów i zaznaczeniami wybranej grupy; tworzenie (także podfolderów przy każdej pozycji), zmiana nazwy i usuwanie pustych folderów (Featured collections) w obu widokach; rozwijana ramka Reset plugin.
+
 ## [1.04] - 2026-11-12
 - Nowa nazwa: Collection Access Manager (katalog collection_access_manager, wcześniej Featured Collection Access / fcaccess); przy pierwszym użyciu kopiuje historię wersji starej wtyczki bez usuwania starego katalogu; strona opcji przypomina o wyłączeniu fcaccess; nowe repozytorium s29829/collection_access_manager.
 
