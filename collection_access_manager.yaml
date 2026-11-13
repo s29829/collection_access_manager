@@ -1,5 +1,5 @@
 name: collection_access_manager
-version: 1.06
+version: 1.07
 title: Collection Access Manager
 desc: Which user groups can see which featured collections - tick access per group in one table (tree, filters, copy between groups, version history)
 author: Jacek Kowalczyk
