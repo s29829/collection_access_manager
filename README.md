@@ -2,9 +2,9 @@
 
 **English** | [Polski](README.pl.md)
 
-Documentation for plugin version **1.07** (ResourceSpace 11).
+Documentation for plugin version **1.08** (ResourceSpace 11).
 *(since X.YY)* marks the plugin version in which a feature first appeared. Features without
-a mark have been available since 1.00. Change history (in Polish): [CHANGELOG.md](CHANGELOG.md).
+a mark have been available since 1.00. Change history: [CHANGELOG.md](CHANGELOG.md).
 
 The plugin shows in one table **which user groups can see which featured collections**
 (featured collection categories and collections, formerly "Themes"). Rows are the collection

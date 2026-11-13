@@ -2,9 +2,9 @@
 
 [English](README.md) | **Polski**
 
-Dokumentacja dla wersji wtyczki **1.07** (ResourceSpace 11).
+Dokumentacja dla wersji wtyczki **1.08** (ResourceSpace 11).
 Znacznik *(od X.YY)* oznacza wersję wtyczki, od której funkcja jest dostępna. Funkcje bez
-znacznika są dostępne od wersji 1.00. Historia zmian: [CHANGELOG.md](CHANGELOG.md).
+znacznika są dostępne od wersji 1.00. Historia zmian (po angielsku): [CHANGELOG.md](CHANGELOG.md).
 
 Wtyczka pokazuje w jednej tabeli, **które grupy użytkowników widzą które Featured collections**
 (kategorie i kolekcje wyróżnione, dawniej „Themes”). Wiersze to drzewo kolekcji, a kolumny to

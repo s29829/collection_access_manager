@@ -1,30 +1,31 @@
 # Changelog - Collection Access Manager
 
-Numeracja wtyczki: 1.00, 1.01, 1.02 … (+0.01 przy każdej zmianie, `tools/release.py bump`).
-Wersja wtyczki w `collection_access_manager.yaml`; wersja całego repozytorium w pliku `VERSION` (zob. `CHANGELOG.md` w katalogu głównym).
+Plugin version numbers: 1.00, 1.01, 1.02 … (+0.01 for every change). The current version is in `collection_access_manager.yaml`.
+
+## [1.08] - 2026-11-13
+- Documentation: English is the main language - change history translated to English.
 
 ## [1.07] - 2026-11-13
-- Dokumentacja: instalacja na Apache (Ubuntu/Debian i rodzina RHEL) – użytkownik i grupa uruchamiające PHP (mod_php / PHP-FPM), uprawnienia, wyłączenie listowania katalogów (Options -Indexes), SELinux.
+- Documentation: installation on Apache (Ubuntu/Debian and the RHEL family) – user and group that run PHP (mod_php / PHP-FPM), permissions, no directory listings (Options -Indexes), SELinux.
 
 ## [1.06] - 2026-11-12
-- Widok drzewa: obok drzewa folderów kolumny grup użytkowników z polami wyboru (All / None, wiersze j* i J), filtry grup i wierszy działają w obu widokach; usunięty wybór jednej grupy.
+- Tree view: user group columns with checkboxes next to the folder tree (All / None, rows j* and J), group and row filters work in both views; the choice of a single group removed.
 
 ## [1.05] - 2026-11-12
-- Widok drzewa (przełącznik Table / Tree) ze strukturą folderów i zaznaczeniami wybranej grupy; tworzenie (także podfolderów przy każdej pozycji), zmiana nazwy i usuwanie pustych folderów (Featured collections) w obu widokach; rozwijana ramka Reset plugin.
+- Tree view (Table / Tree switch) with the folder structure and the selections of the chosen group; creating (also subfolders at every entry), renaming and deleting empty folders (featured collections) in both views; collapsible "Reset plugin" box.
 
 ## [1.04] - 2026-11-12
-- Nowa nazwa: Collection Access Manager (katalog collection_access_manager, wcześniej Featured Collection Access / fcaccess); przy pierwszym użyciu kopiuje historię wersji starej wtyczki bez usuwania starego katalogu; strona opcji przypomina o wyłączeniu fcaccess; nowe repozytorium s29829/collection_access_manager.
+- New name: Collection Access Manager (folder collection_access_manager, previously Featured Collection Access / fcaccess); on first use it copies the version history of the old plugin without deleting the old folder; the options page reminds you to deactivate fcaccess; new repository s29829/collection_access_manager.
 
 ## [1.03] - 2026-11-11
-- Porządki w historii zmian (bez zmian w działaniu wtyczki).
+- Clean-up of the change history (no change in the plugin).
 
 ## [1.02] - 2026-11-11
-- Dokumentacja: instalacja przez Plugin Manager albo CLI (curl, unzip, chown) bez skryptów bash; wydania zawierają tylko archiwum zip.
+- Documentation: installation with Plugin Manager or on the command line (curl, unzip, chown) without bash scripts; releases contain only the zip archive.
 
 ## [1.01] - 2026-11-11
-- Historia wersji w <filestore>/collection_access_manager/data_<klucz>/ z automatycznym przeniesieniem z <filestore>/collection_access_manager_versions_<klucz>/; poprawione tworzenie katalogu przy pierwszym zapisie; opcja „Reset plugin” (usuwa historię, dostępu grup nie zmienia).
+- Version history in <filestore>/collection_access_manager/data_<key>/ with automatic move from <filestore>/collection_access_manager_versions_<key>/; fixed creation of the folder at the first save; "Reset plugin" (deletes the history, does not change group access).
 
 ## [1.00] - 2026-11-11
-- Pierwsza wersja: tabela dostępu grup użytkowników do Featured collections (wiersze = drzewo kategorii i kolekcji, kolumny = grupy); zaznaczenie pozycji zaznacza kategorie nadrzędne, odznaczenie ukrywa całą gałąź; wiersze ogólne j* (wszystkie, także nowe) i J (wyszukiwanie tylko w dostępnych kolekcjach).
-- Kody j<ref> / -j<ref> wyliczane automatycznie zgodnie z logiką ResourceSpace; pozostałe uprawnienia grup bez zmian; grupy dziedziczące tylko do odczytu; filtry (wyszukiwanie, differing, unsaved, grupy, strony kolumn), kopiowanie między grupami, historia wersji (ostatnie 50, przywracanie), zapis przez save_usergroup z wpisem w dzienniku aktywności.
-
+- First version: table of user group access to featured collections (rows = tree of categories and collections, columns = groups); selecting an entry selects the parent categories, deselecting hides the whole branch; general rows j* (all, also new ones) and J (search only in accessible collections).
+- Codes j<ref> / -j<ref> calculated automatically with the ResourceSpace logic; other group permissions unchanged; inheriting groups read-only; filters (search, differing, unsaved, groups, column pages), copying between groups, version history (last 50, restore), saving with save_usergroup and an entry in the activity log.
