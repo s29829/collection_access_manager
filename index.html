@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collection Access Manager – ResourceSpace plugin</title>
+<meta name="description" content="Which user groups can see which featured collections – in one table with the collection tree.">
+<meta property="og:title" content="Collection Access Manager – ResourceSpace plugin">
+<meta property="og:description" content="Which user groups can see which featured collections – in one table with the collection tree.">
+<meta property="og:type" content="website">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css?v=202611191157">
+</head>
+<body style="--accent: #d97706">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="../resourcespace-plugins/"><span class="brand-mark" aria-hidden="true"></span>ResourceSpace plugins</a>
+    <nav class="tabs" aria-label="Plugins">
+      <a class="tab" href="../custom-css/" style="--tab-accent: #2563eb" title="Custom CSS"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.5 3.5a2.1 2.1 0 0 1 3 3L12 16l-3-3z"/><path d="M9 13c-2.5 0-4 1.5-4 4 0 1.5-1 2.5-2 3 4 1 9 0 9-4"/></svg><span>Custom CSS</span></a>
+      <a class="tab" href="../plugin_manager/" style="--tab-accent: #7c3aed" title="Plugin Manager"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg><span>Plugin Manager</span></a>
+      <a class="tab" href="../permission_group_manager/" style="--tab-accent: #0d9488" title="Permission Group Manager"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.2c2.9.2 5 2.4 5 5.8"/></svg><span>Permissions</span></a>
+      <a class="tab" href="../collection_access_manager/" style="--tab-accent: #d97706" title="Collection Access Manager" aria-current="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.6l2 2.5h8.4A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M8.5 13.5l2.5 2.5 4.5-4.5"/></svg><span>Collection Access</span></a>
+      <a class="tab" href="../security_guard/" style="--tab-accent: #dc2626" title="Security Guard"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><span>Security Guard</span></a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+<div class="wrap hero-grid">
+  <div>
+    <div class="badge-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.6l2 2.5h8.4A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M8.5 13.5l2.5 2.5 4.5-4.5"/></svg></div>
+    <div class="eyebrow">ResourceSpace 11 plugin</div>
+    <h1>Collection Access Manager</h1>
+    <p class="lead">Which user groups can see which featured collections – in one table with the collection tree.</p>
+    <p>ResourceSpace stores access to featured collections as codes in the group permissions. Collection Access Manager shows them as a table: rows are the featured collection tree, columns are user groups. Tick a box instead of working out the codes.</p>
+  </div>
+  <aside class="download-card" aria-label="Download">
+    <div class="label">Latest release</div>
+    <div class="version">v<span data-repo="s29829/collection_access_manager" data-field="version">1.08</span></div>
+    <div class="meta" data-repo="s29829/collection_access_manager" data-field="meta">Released 13 Nov 2026</div>
+    <a class="btn btn-primary" href="https://github.com/s29829/collection_access_manager/releases/download/v1.08/collection_access_manager-1.08.zip" data-repo="s29829/collection_access_manager" data-field="url"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg> Download .zip</a>
+    <div class="links">
+      <a href="https://github.com/s29829/collection_access_manager/releases/tag/v1.08" data-repo="s29829/collection_access_manager" data-field="notes">Release notes</a>
+      <a href="https://github.com/s29829/collection_access_manager">Source on GitHub</a>
+      <a href="https://github.com/s29829/collection_access_manager/releases">All releases</a>
+    </div>
+  </aside>
+</div>
+</section>
+<section class="section" id="features">
+<div class="wrap">
+  <h2>Features</h2>
+  <div class="grid">
+      <div class="card feature"><h3>Access table with tree</h3><p>Featured collection categories and collections with indentation. Ticking an entry also ticks its parent categories, so the access always works.</p></div>
+      <div class="card feature"><h3>Correct codes</h3><p>The plugin writes the same access codes that ResourceSpace itself computes, including &quot;all collections&quot; and hidden branches.</p></div>
+      <div class="card feature"><h3>Manage folders</h3><p>Create, rename and delete featured collection folders directly in the tree.</p></div>
+      <div class="card feature"><h3>Filters</h3><p>Search collections, show only rows where groups differ or rows with unsaved changes, open or close the whole tree.</p></div>
+      <div class="card feature"><h3>Copy and history</h3><p>Copy access from one group to another; every save keeps the previous state in the version history for restoring.</p></div>
+      <div class="card feature"><h3>Inheritance aware</h3><p>Groups that inherit permissions from a parent group are shown read-only, so the table never contradicts ResourceSpace.</p></div>
+  </div>
+</div>
+</section>
+<section class="section" id="install">
+<div class="wrap">
+  <h2>Installation</h2>
+  <div class="install">
+    <div class="card">
+      <h3>In ResourceSpace</h3>
+      <ol>
+<li><strong>Download</strong> the .zip above.</li>
+<li>In ResourceSpace open <a href="../plugin_manager/">Plugin Manager</a> &gt; <strong>Upload a plugin</strong> and upload the file.</li>
+<li><strong>Activate</strong> Collection Access Manager in the list of installed plugins, then open its <strong>Options</strong>.</li>
+      </ol>
+      <p class="hint">Updating: upload the new .zip and choose <strong>Overwrite</strong>. Settings and data are kept in the filestore, outside the plugin folder.</p>
+    </div>
+    <div class="card">
+      <h3>On the server (command line)</h3>
+      <div class="code-wrap"><pre class="code"><code><span class="c"># download and unpack – &lt;RS_ROOT&gt; is your ResourceSpace folder</span>
+cd /tmp
+curl -fLO https://github.com/s29829/collection_access_manager/releases/download/v<span data-repo="s29829/collection_access_manager" data-field="version">1.08</span>/collection_access_manager-<span data-repo="s29829/collection_access_manager" data-field="version">1.08</span>.zip
+<span class="c"># only when updating – the plugin data stays in the filestore</span>
+sudo rm -rf &lt;RS_ROOT&gt;/plugins/collection_access_manager
+sudo unzip -q collection_access_manager-<span data-repo="s29829/collection_access_manager" data-field="version">1.08</span>.zip -d &lt;RS_ROOT&gt;/plugins/
+sudo chown -R www-data:www-data &lt;RS_ROOT&gt;/plugins/collection_access_manager</code></pre></div>
+      <p class="hint"><code>www-data</code> is the user that runs PHP (Apache on the RHEL family: <code>apache</code>). Then activate the plugin in System &gt; Plugins. With git: <code>git clone https://github.com/s29829/collection_access_manager &lt;RS_ROOT&gt;/plugins/collection_access_manager</code></p>
+    </div>
+  </div>
+</div>
+</section>
+<section class="section" id="more">
+<div class="wrap two">
+  <div class="card">
+    <h2>Requirements</h2>
+    <ul class="req"><li>ResourceSpace 11</li></ul>
+    
+  </div>
+  <div class="card">
+    <h2>Documentation</h2>
+    <ul class="linklist">
+      <li><a href="https://github.com/s29829/collection_access_manager/blob/HEAD/README.md">Documentation (English)</a></li>
+      <li><a href="https://github.com/s29829/collection_access_manager/blob/HEAD/README.pl.md">Dokumentacja (polski)</a></li>
+      <li><a href="https://github.com/s29829/collection_access_manager/blob/HEAD/CHANGELOG.md">Changelog</a></li>
+      <li><a href="https://github.com/s29829/collection_access_manager/blob/HEAD/LICENSE">License</a> · <a href="https://github.com/s29829/collection_access_manager/blob/HEAD/LICENSE-COMMERCIAL.md">Commercial use</a></li>
+      <li><a href="https://github.com/s29829/collection_access_manager/issues">Report a problem</a></li>
+    </ul>
+  </div>
+</div>
+</section>
+
+</main>
+<footer class="footer">
+  <div class="wrap">
+    <p><strong>License:</strong> PolyForm Noncommercial 1.0.0 – free for private and noncommercial use. Commercial use requires the author&#x27;s written permission (see LICENSE-COMMERCIAL.md in each plugin).</p>
+    <p>Independent plugins by Jacek Kowalczyk. Not affiliated with or endorsed by the ResourceSpace project or Montala Ltd. ResourceSpace is open source software licensed under the BSD licence.</p>
+    <p class="muted">Site generated 2026-11-19. Download buttons always point to the latest release on GitHub.</p>
+  </div>
+</footer>
+<script src="assets/site.js?v=202611191157" defer></script>
+</body>
+</html>
